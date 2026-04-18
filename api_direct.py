@@ -2726,60 +2726,60 @@ def word_info():
         return jsonify({'success': False, 'error': str(e)})
 
 # ========== 主程序入口 ==========
+# 注意：这些初始化代码必须在模块导入时就执行，以支持 gunicorn 启动
 
+print("\n" + "=" * 60)
+print("🚀 HSK文本分析API启动 - OpenRouter增强优化版")
+print("=" * 60)
+
+print("📚 预加载HSK词汇表...")
+hsk_vocabulary, hsk_chars = load_hsk_vocabulary()
+
+print("\n🧠 预加载预测器...")
+initialize_predictor()
+
+print("\n🔧 预加载增强分析器...")
+initialize_enhanced_analyzer()
+
+print("\n📡 服务信息:")
+print("   地址: http://localhost:5000")
+print("   健康检查: http://localhost:5000/api/health")
+print("   完整分析: POST http://localhost:5000/api/analyze")
+print("   增强分析: POST http://localhost:5000/api/enhanced_analyze")
+print("   详细教学建议: POST http://localhost:5000/api/enhance_teaching")
+print("   颜色高亮: POST http://localhost:5000/api/color_text")
+
+print("\n🎯 功能特色:")
+print("   - 基于真实HSK词汇表（已修复多音字处理）")
+print("   - 汉字级别分布分析")
+print("   - 词汇难度可视化")
+print("   - 生词自动识别")
+print("   - 增强分析（详细教学建议生成）")
+print("   - 词语搭配库支持")
+print("   - 使用OpenRouter Qwen3 Coder 480B模型")
+print("   - 无字符限制教学建议生成")
+
+print("\n🔍 增强分析特色:")
+print("   - 详细教学建议（包含完整的九大教学环节）")
+print("   - 精准提取文本主题")
+print("   - 提取教学关键词")
+print("   - 基于N+1原则提取生字生词")
+print("   - 查找词语搭配和例句")
+print("   - 提供详细教学要点分析")
+print("   - 包含具体练习题和答案")
+print("   - 推荐真实教学资源链接")
+
+print("\n⚙️ 系统要求:")
+print("   - OpenRouter API密钥（已配置）")
+print("   - 使用模型: qwen/qwen3-coder-480b-a35b:free")
+print("   - 搭配词库目录: hsk_predictor - 1/n/")
+print("   - 无需本地Ollama服务")
+
+print("\n💡 按 Ctrl+C 停止")
+print("=" * 60)
+
+# 只有直接运行脚本时才启动内置服务器
 if __name__ == '__main__':
-    print("\n" + "=" * 60)
-    print("🚀 HSK文本分析API启动 - OpenRouter增强优化版")
-    print("=" * 60)
-    
-    print("📚 预加载HSK词汇表...")
-    hsk_vocabulary, hsk_chars = load_hsk_vocabulary()
-    
-    print("\n🧠 预加载预测器...")
-    initialize_predictor()
-    
-    print("\n🔧 预加载增强分析器...")
-    initialize_enhanced_analyzer()
-    
-    print("\n📡 服务信息:")
-    print("   地址: http://localhost:5000")
-    print("   健康检查: http://localhost:5000/api/health")
-    print("   完整分析: POST http://localhost:5000/api/analyze")
-    print("   增强分析: POST http://localhost:5000/api/enhanced_analyze")
-    print("   详细教学建议: POST http://localhost:5000/api/enhance_teaching")
-    print("   颜色高亮: POST http://localhost:5000/api/color_text")
-    
-    print("\n🎯 功能特色:")
-    print("   - 基于真实HSK词汇表（已修复多音字处理）")
-    print("   - 汉字级别分布分析")
-    print("   - 词汇难度可视化")
-    print("   - 生词自动识别")
-    print("   - 增强分析（详细教学建议生成）")
-    print("   - 词语搭配库支持")
-    print("   - 使用OpenRouter Qwen3 Coder 480B模型")
-    print("   - 无字符限制教学建议生成")
-    
-    print("\n🔍 增强分析特色:")
-    print("   - 详细教学建议（包含完整的九大教学环节）")
-    print("   - 精准提取文本主题")
-    print("   - 提取教学关键词")
-    print("   - 基于N+1原则提取生字生词")
-    print("   - 查找词语搭配和例句")
-    print("   - 提供详细教学要点分析")
-    print("   - 包含具体练习题和答案")
-    print("   - 推荐真实教学资源链接")
-
-    print("\n⚙️ 系统要求:")
-    print("   - OpenRouter API密钥（已配置）")
-    print("   - 使用模型: qwen/qwen3-coder-480b-a35b:free")
-    print("   - 搭配词库目录: hsk_predictor - 1/n/")
-    print("   - 无需本地Ollama服务")
-    
-    print("\n💡 按 Ctrl+C 停止")
-    print("=" * 60)
-    
     import os
-    # 从环境变量 PORT 获取端口号，如果没有则默认使用 5000
     port = int(os.environ.get("PORT", 5000))
-    # 启动 Flask 应用，监听所有网络接口（0.0.0.0），以便外部访问
     app.run(host='0.0.0.0', port=port, debug=False)
