@@ -2778,4 +2778,8 @@ if __name__ == '__main__':
     print("\n💡 按 Ctrl+C 停止")
     print("=" * 60)
     
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    import os
+    # 从环境变量 PORT 获取端口号，如果没有则默认使用 5000
+    port = int(os.environ.get("PORT", 5000))
+    # 启动 Flask 应用，监听所有网络接口（0.0.0.0），以便外部访问
+    app.run(host='0.0.0.0', port=port, debug=False)
