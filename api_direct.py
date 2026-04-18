@@ -112,7 +112,8 @@ def get_hsk_level_color(level):
 
 def load_custom_tokenizer():
     """加载自定义分词器"""
-    tokenizer_path = r"C:\Users\DF-Lenovo\Desktop\hsk_predictor\models\best_optimized_model_tokenizer.pkl"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    tokenizer_path = os.path.join(current_dir, 'models', 'best_optimized_model_tokenizer.pkl')
     
     if not os.path.exists(tokenizer_path):
         print(f"❌ 分词器文件不存在: {tokenizer_path}")
@@ -486,7 +487,7 @@ def initialize_enhanced_analyzer():
         return None
     
     try:
-        base_dir = r"C:\\Users\\DF-Lenovo\\Desktop\\hsk_predictor - 1"
+        base_dir = os.path.dirname(os.path.abspath(__file__))
         collocation_dir = os.path.join(base_dir, 'n')
         
         if not os.path.exists(collocation_dir):
