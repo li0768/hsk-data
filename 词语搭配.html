@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>词语搭配检索 - 灵汐智能中文助教</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Microsoft YaHei', 'Segoe UI', system-ui, -apple-system, 'SF Pro Text', 'Roboto', sans-serif;
+            /* 导航页同款渐变背景 */
+            background: linear-gradient(180deg, 
+                #C2DBFF 0%,
+                #CCE3FF 6%,
+                #D9EAFF 15%,
+                #E6F0FF 28%,
+                #F0F6FF 48%,
+                #F8FBFE 72%,
+                #FFFFFF 90%,
+                #FFFFFF 100%
+            );
+            min-height: 100vh;
+            color: #333;
+            padding: 0;
+            margin: 0;
+            background-attachment: fixed;
+        }
+
+        .fullscreen-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px 0 30px;
+            gap: 0;
+        }
+
+        .header {
+            text-align: center;
+            padding: 15px 0 10px 0;
+            color: #1e40af;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: nowrap;
+            margin: 0 auto;
+            width: fit-content;
+            position: relative;
+        }
+
+        .nav-icon-right {
+            position: absolute;
+            right: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #1e40af;
+            transition: all 0.2s;
+            padding: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .nav-icon-right:hover {
+            background: rgba(255, 255, 255, 0.5);
+            color: #0f2b6d;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .avatar-container {
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 5px solid white;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            background-color: transparent;
+            flex-shrink: 0;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .avatar-img.failed {
+            display: none;
+        }
+
+        .avatar-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 3.5rem;
+        }
+
+        .title-container {
+            text-align: center;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.08);
+            background: linear-gradient(115deg, #0A3E6D 0%, #1B5A8C 25%, #2A6FA8 50%, #1F5E8E 75%, #0C4675 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            font-size: 1.5rem;
+            color: #4a5568;
+            opacity: 0.85;
+            line-height: 1.3;
+            font-weight: 500;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 0;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 32px 40px 40px 40px;
+            box-shadow: 0 8px 18px -10px rgba(31, 84, 136, 0.2), 0 0 0 1px rgba(79, 129, 189, 0.45), 0 0 0 3px rgba(255, 255, 255, 0.75);
+            transition: all 0.2s;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .search-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 32px;
+            width: 100%;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid rgba(79, 129, 189, 0.3);
+            border-radius: 48px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        .btn-search {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 48px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            min-width: 120px;
+            justify-content: center;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+        }
+
+        .collocation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0 32px 0;
+            width: 100%;
+        }
+
+        .collocation-btn {
+            flex: 1;
+            padding: 18px 0;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: 2px;
+            border: 1.5px solid transparent;
+            background: rgba(248, 250, 252, 0.9);
+            color: #475569;
+        }
+
+        .collocation-btn-left {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border-color: #fed7aa;
+            color: #c2410c;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1);
+        }
+
+        .collocation-btn-left i {
+            color: #f97316;
+            font-size: 1.5rem;
+        }
+
+        .collocation-btn-left:hover {
+            background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+            border-color: #f97316;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(249, 115, 22, 0.25);
+        }
+
+        .collocation-btn-right {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #bbf7d0;
+            color: #047857;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+        }
+
+        .collocation-btn-right i {
+            color: #10b981;
+            font-size: 1.5rem;
+        }
+
+        .collocation-btn-right:hover {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: #10b981;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.25);
+        }
+
+        .collocation-btn:active {
+            transform: translateY(0px);
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            margin: 8px 0 20px 0;
+        }
+        .btn-clear {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            padding: 8px 28px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #4b5563;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-clear:hover {
+            background: rgba(241, 245, 249, 0.8);
+            border-color: #94a3b8;
+            color: #1f2937;
+        }
+
+        .examples {
+            background: rgba(248, 250, 252, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 20px 24px;
+            border: 1px solid rgba(79, 129, 189, 0.3);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .examples h3 {
+            margin-bottom: 14px;
+            color: #1F5488;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .example-list {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .example-btn {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(79, 129, 189, 0.4);
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1e40af;
+            transition: all 0.2s;
+        }
+
+        .example-btn:hover {
+            background: #8b5cf6;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .results-area {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 0;
+            box-shadow: 0 8px 18px -10px rgba(31, 84, 136, 0.2), 0 0 0 1px rgba(79, 129, 189, 0.45);
+            width: 100%;
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: all 0.2s;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .results-area.visible {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 28px 12px 28px;
+            border-bottom: 2px solid rgba(79, 129, 189, 0.3);
+        }
+
+        .result-header i {
+            font-size: 1.3rem;
+            color: #1e40af;
+        }
+
+        .result-header h2 {
+            font-size: 1.25rem;
+            color: #1F5488;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .result-content-scroll {
+            padding: 20px 28px 28px 28px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        .result-content-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .collocation-group {
+            margin-bottom: 20px;
+            background: rgba(254, 254, 254, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(79, 129, 189, 0.2);
+            overflow: hidden;
+            transition: all 0.1s;
+        }
+
+        .colloc-header-clickable {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: rgba(250, 252, 255, 0.8);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .colloc-header-clickable:hover {
+            background: rgba(241, 245, 249, 0.9);
+        }
+
+        .colloc-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .collocation-type {
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .type-left {
+            background: #059669;
+        }
+
+        .type-right {
+            background: #d97706;
+        }
+
+        .pattern-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .pattern-name .highlight-red {
+            color: #dc2626;
+            background: rgba(220,38,38,0.08);
+            padding: 0 2px;
+            border-radius: 6px;
+        }
+
+        .example-count-badge {
+            background: rgba(226, 232, 240, 0.8);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .expand-icon {
+            font-size: 0.9rem;
+            color: #5b6e8c;
+            transition: transform 0.2s;
+        }
+
+        .examples-collapsible {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-out;
+            background: #ffffff;
+            border-top: 0px solid rgba(79, 129, 189, 0.2);
+        }
+
+        .examples-collapsible.open {
+            max-height: 800px;
+            transition: max-height 0.5s ease-in-out;
+            border-top: 1px solid rgba(79, 129, 189, 0.2);
+        }
+
+        .examples-inner {
+            padding: 18px 20px 20px 32px;
+            background: rgba(254, 254, 254, 0.9);
+        }
+
+        .example-item {
+            margin-bottom: 12px;
+            padding: 8px 12px 8px 18px;
+            border-left: 3px solid #cbd5e1;
+            background: rgba(249, 250, 251, 0.8);
+            border-radius: 12px;
+            line-height: 1.55;
+        }
+
+        .example-label {
+            font-weight: 600;
+            color: #4b5563;
+            margin-right: 10px;
+            font-size: 0.85rem;
+        }
+
+        .example-text {
+            color: #1e293b;
+            word-break: break-word;
+        }
+
+        .example-text .highlight-red {
+            color: #dc2626;
+            font-weight: 700;
+            background: rgba(220, 38, 38, 0.1);
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
+        .word-info-card {
+            background: rgba(254, 252, 232, 0.9);
+            border-left: 5px solid #8b5cf6;
+            padding: 16px 20px;
+            border-radius: 20px;
+        }
+
+        .stats-badge {
+            display: inline-block;
+            background: #8b5cf6;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 8px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px 20px;
+            color: #6b7280;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #cbd5e1;
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 16px 0 20px;
+            color: #4b5563;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(30, 64, 175, 0.1);
+            margin-top: 0;
+            background: transparent;
+        }
+
+        @media (max-width: 800px) {
+            .fullscreen-container { padding: 15px 20px 0 20px; }
+            .collocation-btn { padding: 15px 0; font-size: 1.1rem; gap: 12px; border-radius: 50px; }
+            .collocation-btn i { font-size: 1.3rem; }
+            .btn-search { padding: 12px 20px; font-size: 0.9rem; min-width: 100px; }
+            .input-section { padding: 24px 24px 32px 24px; }
+            .header h1 { font-size: 2.2rem; }
+            .nav-icon-right { right: -60px; font-size: 1.2rem; }
+        }
+        
+        @media (max-width: 600px) {
+            .fullscreen-container { padding: 15px 15px 0 15px; }
+            .collocation-row { gap: 10px; margin: 10px 0 24px 0; }
+            .collocation-btn { padding: 12px 0; font-size: 0.95rem; gap: 8px; border-radius: 44px; }
+            .collocation-btn i { font-size: 1.1rem; }
+            .search-row { margin-bottom: 24px; }
+            .nav-icon-right { right: -10px; font-size: 1.2rem; background: rgba(255,255,255,0.4); }
+            .header-content { position: relative; }
+        }
+        
+        @media (max-width: 450px) {
+            .collocation-btn { padding: 10px 0; font-size: 0.85rem; gap: 6px; }
+            .collocation-btn i { font-size: 1rem; }
+            .btn-search { padding: 10px 16px; min-width: 80px; font-size: 0.85rem; }
+            .search-input { padding: 12px 16px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="fullscreen-container">
+    <div class="header">
+        <div class="header-content">
+            <div class="avatar-container">
+                <div class="avatar">
+                    <img src="images/lingxi-avatar.png" alt="灵汐智能助教" class="avatar-img"
+                         onerror="this.classList.add('failed'); document.querySelector('.avatar-fallback').style.display='flex'">
+                    <div class="avatar-fallback" style="display: none;">👧</div>
+                </div>
+            </div>
+            <div class="title-container">
+                <h1>词语搭配检索</h1>
+                <p class="header-subtitle">左搭配 + 右搭配 + 词语信息 · 标准格式显示</p>
+            </div>
+            <button class="nav-icon-right" id="homeBtn" title="返回导航">
+                <i class="fas fa-home"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-area">
+        <div class="input-section">
+            <div class="search-row">
+                <div class="search-input-wrapper">
+                    <input type="text" class="search-input" id="searchWord" placeholder="请输入词语，如：图书馆、比、打、学习...">
+                </div>
+                <button class="btn-search" id="searchBtn"><i class="fas fa-search"></i> 检索</button>
+            </div>
+
+            <div class="collocation-row">
+                <button class="collocation-btn collocation-btn-left" id="leftBtn">
+                    <i class="fas fa-arrow-left"></i> 左搭配
+                </button>
+                <button class="collocation-btn collocation-btn-right" id="rightBtn">
+                    右搭配 <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="action-row">
+                <button class="btn-clear" id="clearBtn"><i class="fas fa-eraser"></i> 清空</button>
+            </div>
+
+            <div class="examples">
+                <h3><i class="fas fa-lightbulb"></i> 示例词语</h3>
+                <div class="example-list">
+                    <button class="example-btn" data-word="图书馆">图书馆</button>
+                    <button class="example-btn" data-word="综合">综合</button>
+                    <button class="example-btn" data-word="比">比</button>
+                    <button class="example-btn" data-word="打">打</button>
+                    <button class="example-btn" data-word="学习">学习</button>
+                    <button class="example-btn" data-word="工作">工作</button>
+                    <button class="example-btn" data-word="阿公">阿公</button>
+                    <button class="example-btn" data-word="猫头鹰">猫头鹰</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-area" id="resultsArea">
+            <div class="result-header">
+                <i class="fas fa-chart-line"></i>
+                <h2>检索结果</h2>
+            </div>
+            <div class="result-content-scroll" id="resultContainer">
+                <div id="loadingIndicator" style="display: none;" class="loading">
+                    <div class="spinner"></div>
+                    <p>正在检索...</p>
+                </div>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        <p>词语搭配检索 | 标准格式版 | 左搭配库 + 右搭配库 + 词语信息库 | Python API: http://127.0.0.1:5000</p>
+    </div>
+</div>
+
+<script>
+    const BASE_PATH = 'C:\\Users\\DF-Lenovo\\Desktop\\hsk_predictor - 1';
+    
+    const searchWordInput = document.getElementById('searchWord');
+    const searchBtn = document.getElementById('searchBtn');
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const resultsArea = document.getElementById('resultsArea');
+    const resultContentDiv = document.getElementById('resultContent');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const homeBtn = document.getElementById('homeBtn');
+    
+    homeBtn.addEventListener('click', () => { window.location.href = '智能中文助教 · 导航.html'; });
+    
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+    
+    function autoLoadFromUrl() {
+        const wordFromUrl = getUrlParameter('word');
+        if (wordFromUrl && wordFromUrl.trim()) {
+            searchWordInput.value = wordFromUrl.trim();
+            setTimeout(() => { searchWordInfo(); }, 100);
+        }
+    }
+    
+    function showResultsArea() { resultsArea.classList.add('visible'); }
+    
+    searchBtn.addEventListener('click', async () => { await searchWordInfo(); });
+    leftBtn.addEventListener('click', async () => { await searchCollocation('left'); });
+    rightBtn.addEventListener('click', async () => { await searchCollocation('right'); });
+    clearBtn.addEventListener('click', () => {
+        searchWordInput.value = '';
+        resultContentDiv.innerHTML = '';
+        resultsArea.classList.remove('visible');
+        loadingIndicator.style.display = 'none';
+    });
+    
+    document.querySelectorAll('.example-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const word = btn.getAttribute('data-word');
+            searchWordInput.value = word;
+            setTimeout(() => { searchWordInfo(); }, 50);
+        });
+    });
+    
+    function cleanAndHighlightExample(exampleText, searchWord) {
+        if (!exampleText) return '';
+        let cleaned = exampleText.replace(/<[^>]*>/g, '');
+        cleaned = cleaned.replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+        if (searchWord && cleaned.includes(searchWord)) {
+            const regex = new RegExp(`(${searchWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+            cleaned = cleaned.replace(regex, '<span class="highlight-red">$1</span>');
+        }
+        return cleaned;
+    }
+    
+    async function searchWordInfo() {
+        const word = searchWordInput.value.trim();
+        if (!word) { alert('请输入要检索的词语'); return; }
+        if (!/^[\u4e00-\u9fff]{1,4}$/.test(word)) { alert('请输入1-4个中文字符的词语'); return; }
+        
+        resultContentDiv.innerHTML = '';
+        loadingIndicator.style.display = 'block';
+        showResultsArea();
+        
+        try {
+            const response = await fetch('http://localhost:5000/api/word_info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word: word, base_path: BASE_PATH })
+            });
+            const data = await response.json();
+            loadingIndicator.style.display = 'none';
+            if (data.success && data.result) { displayWordInfo(data.result); }
+            else { displayEmptyWordInfo(word); }
+        } catch (error) {
+            loadingIndicator.style.display = 'none';
+            displayEmptyWordInfo(word);
+        }
+    }
+    
+    async function searchCollocation(type) {
+        const word = searchWordInput.value.trim();
+        if (!word) { alert('请输入要检索的词语'); return; }
+        if (!/^[\u4e00-\u9fff]{1,4}$/.test(word)) { alert('请输入1-4个中文字符的词语'); return; }
+        
+        resultContentDiv.innerHTML = '';
+        loadingIndicator.style.display = 'block';
+        showResultsArea();
+        
+        try {
+            const basePathParam = type === 'left' ? BASE_PATH + '\\left' : BASE_PATH + '\\right';
+            const response = await fetch('http://localhost:5000/api/find_collocation_file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word: word, type: type, base_path: basePathParam })
+            });
+            const data = await response.json();
+            loadingIndicator.style.display = 'none';
+            if (data.success && data.result && data.result.collocations && data.result.collocations.length > 0) {
+                displayCollocations(data.result, type, word);
+            } else {
+                displayEmptyResult(word, type === 'left' ? '左搭配' : '右搭配');
+            }
+        } catch (err) {
+            loadingIndicator.style.display = 'none';
+            displayEmptyResult(word, type === 'left' ? '左搭配' : '右搭配');
+        }
+    }
+    
+    function displayCollocations(result, type, searchWord) {
+        const collocations = result.collocations || [];
+        const word = result.word || searchWord;
+        const typeText = type === 'left' ? '左搭配' : '右搭配';
+        let html = `<div class="fade-in"><div style="margin-bottom: 20px;"><span class="stats-badge" style="background:${type === 'left' ? '#059669' : '#d97706'}"><i class="fas fa-tag"></i> 检索词: ${word}</span><span class="stats-badge" style="background:#3b82f6"><i class="fas fa-${type === 'left' ? 'arrow-left' : 'arrow-right'}"></i> ${typeText}</span><span class="stats-badge"><i class="fas fa-list"></i> 搭配模式: ${collocations.length}</span><span class="stats-badge"><i class="fas fa-file-alt"></i> 总例句: ${result.total_examples || 0}</span></div>`;
+        
+        collocations.forEach((colloc, idx) => {
+            const pattern = colloc.pattern || `模式${idx+1}`;
+            const examples = colloc.all_examples || [];
+            const highlightedPattern = pattern.replace(new RegExp(`(${word})`, 'g'), '<span class="highlight-red">$1</span>');
+            const groupId = `colloc-${type}-${idx}`;
+            
+            html += `<div class="collocation-group"><div class="colloc-header-clickable" data-group="${groupId}"><div class="colloc-info"><span class="collocation-type ${type === 'left' ? 'type-left' : 'type-right'}">${typeText}</span><span class="pattern-name">${highlightedPattern}</span><span class="example-count-badge"><i class="far fa-comment-dots"></i> ${examples.length} 个例句</span></div><i class="fas fa-chevron-down expand-icon" id="icon-${groupId}"></i></div><div class="examples-collapsible" id="panel-${groupId}"><div class="examples-inner">`;
+            if (examples.length > 0) {
+                examples.forEach((ex, exIdx) => {
+                    const chnNum = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+                    const label = exIdx < chnNum.length ? chnNum[exIdx] : (exIdx+1);
+                    const cleanedExample = cleanAndHighlightExample(ex, word);
+                    html += `<div class="example-item"><span class="example-label">例句${label}.</span><span class="example-text">${cleanedExample}</span></div>`;
+                });
+            } else {
+                html += `<div style="padding: 10px 0; color:#6b7280;"><i class="far fa-folder-open"></i> 暂无例句</div>`;
+            }
+            html += `</div></div></div>`;
+        });
+        
+        if (result.note) html += `<div class="info-note" style="margin-top:16px; background:rgba(241,245,249,0.8); border-radius:16px; padding:10px 16px;"><i class="fas fa-info-circle"></i> ${result.note}</div>`;
+        html += `</div>`;
+        resultContentDiv.innerHTML = html;
+        
+        document.querySelectorAll('.colloc-header-clickable').forEach(header => {
+            header.addEventListener('click', (e) => {
+                const groupId = header.getAttribute('data-group');
+                const panel = document.getElementById(`panel-${groupId}`);
+                const icon = document.getElementById(`icon-${groupId}`);
+                if (panel.classList.contains('open')) {
+                    panel.classList.remove('open');
+                    if(icon) icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                } else {
+                    panel.classList.add('open');
+                    if(icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                }
+            });
+        });
+    }
+    
+    function displayWordInfo(info) {
+        const word = info.word;
+        const pinyin = info.pinyin || '未找到';
+        const pos = info.pos || '未找到';
+        const english = info.english || '未找到';
+        const examples = info.examples || [];
+        const image_info = info.image_info || { found: false };
+        
+        let html = `<div class="fade-in"><div style="margin-bottom:12px;"><span class="stats-badge"><i class="fas fa-info-circle"></i> 词语信息</span><span class="stats-badge">${word}</span></div><div class="word-info-card"><div style="display:grid; grid-template-columns:70px 1fr; gap:12px; margin-bottom:18px;"><div style="font-weight:600;">拼音：</div><div>${pinyin}</div><div style="font-weight:600;">词性：</div><div>${pos}</div><div style="font-weight:600;">英语：</div><div>${english}</div></div>`;
+        if (examples && examples.length) {
+            html += `<div style="background:rgba(240,249,255,0.8); border-radius:20px; padding:12px 16px; margin-bottom:20px;"><h4 style="margin-bottom:10px;"><i class="fas fa-quote-right"></i> 例句</h4>`;
+            examples.forEach((ex, idx) => {
+                const cleanedEx = cleanAndHighlightExample(ex, word);
+                html += `<div style="padding:6px 0; border-left: 3px solid #0284c7; padding-left:14px; margin-bottom:8px;">${cleanedEx}</div>`;
+            });
+            html += `</div>`;
+        }
+        html += `<div style="background:rgba(250,245,255,0.8); border-radius:20px; padding:12px 16px;"><h4><i class="fas fa-image"></i> 图片资源</h4>`;
+        if (image_info.found && image_info.data_url) {
+            html += `<div style="text-align:center; margin:10px 0;"><img src="${image_info.data_url}" alt="${word}" style="max-width:100%; max-height:180px; border-radius:12px; border:1px solid #e2e8f0;"></div><div style="text-align:center;"><button class="btn-download" style="background:#8b5cf6; color:white; border:none; padding:6px 20px; border-radius:40px; cursor:pointer;" onclick="downloadImage('${image_info.data_url}', '${image_info.filename}')"><i class="fas fa-download"></i> 下载图片</button></div>`;
+        } else {
+            html += `<div class="no-image" style="padding:20px; text-align:center;"><i class="fas fa-image"></i><p>暂无图片资源</p></div>`;
+        }
+        html += `</div></div></div>`;
+        resultContentDiv.innerHTML = html;
+    }
+    
+    function displayEmptyResult(word, typeText) {
+        resultContentDiv.innerHTML = `<div class="no-results"><i class="fas fa-database"></i><h3>未找到 “${word}” 的${typeText}数据</h3><p>请尝试其他词语</p></div>`;
+    }
+    
+    function displayEmptyWordInfo(word) {
+        resultContentDiv.innerHTML = `<div class="no-results"><i class="fas fa-database"></i><h3>未找到 “${word}” 的词语信息</h3><p>可能暂无拼音/词性/例句库</p></div>`;
+    }
+    
+    window.downloadImage = function(dataUrl, filename) {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    
+    autoLoadFromUrl();
+</script>
+</body>
+</html>

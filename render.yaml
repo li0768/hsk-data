@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: hsk-api
+    runtime: python
+    repo: https://github.com/li0768/hsk-predictor
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api_direct:app --timeout 180
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12

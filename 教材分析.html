@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本完整分析 - 灵汐智能中文助教</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(180deg, #C2DBFF 0%, #CCE3FF 6%, #D9EAFF 15%, #E6F0FF 28%, #F0F6FF 48%, #F8FBFE 72%, #FFFFFF 90%, #FFFFFF 100%);
+            min-height: 100vh;
+            padding: 10px;
+            background-attachment: fixed;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        /* 统一头部居中布局 - 放大版，内部左对齐 */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0 20px;
+        }
+        .header-placeholder { width: 130px; visibility: hidden; }
+        .header-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            flex: 1;
+        }
+        /* 放大头像 */
+        .avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 5px solid white;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+        .avatar:hover { transform: scale(1.02); }
+        .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-fallback {
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 3.5rem;
+        }
+        .title-container { text-align: left; }  /* 标题容器改为左对齐 */
+        .header h1 {
+            font-size: 3rem;        /* 放大标题 */
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            background: linear-gradient(115deg, #0A3E6D, #1B5A8C, #2A6FA8, #1F5E8E, #0C4675);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-subtitle {
+            font-size: 1.2rem;      /* 放大副标题 */
+            color: #2c5a82;
+            opacity: 0.9;
+            font-weight: 500;
+            text-align: left;        /* 左对齐 */
+            margin-top: 4px;
+        }
+        .header-right { width: 130px; display: flex; justify-content: flex-end; }
+        .home-btn {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #1e40af;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .home-btn:hover { background: rgba(255,255,255,0.98); transform: translateY(-2px); }
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 15px; flex:1; min-height:0; }
+        .analyzer-card, .results-card {
+            background: rgba(255,255,255,0.94);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 8px 18px -10px rgba(31,84,136,0.2), 0 0 0 1px rgba(79,129,189,0.45);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+            min-height: 850px;
+            overflow: hidden;
+        }
+        .text-input { width:100%; height:260px; padding:18px; border-radius:20px; border:2px solid rgba(79,129,189,0.3); font-size:16px; margin-bottom:15px; background: rgba(255,255,255,0.8); resize: vertical; }
+        .action-buttons { display: flex; gap:12px; margin:15px 0; }
+        .btn { padding:10px 14px; border-radius:40px; font-weight:600; cursor:pointer; display: flex; align-items:center; gap:8px; flex:1; justify-content:center; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color:white; border:none; }
+        .result-content { flex:1; overflow-y: auto; padding-right:5px; }
+        .examples { background: rgba(255,255,255,0.7); border-radius: 24px; padding: 16px; margin-top: 15px; }
+        .example-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .example-btn { padding:7px 14px; background:white; border-radius:40px; cursor:pointer; border:1px solid rgba(79,129,189,0.4); }
+        .visualization-legend { background: rgba(255,255,255,0.7); border-radius: 24px; padding: 16px; margin-top: 15px; }
+        .visualization-grid { display: grid; grid-template-columns: repeat(4,1fr); gap:8px; }
+        .academic-card { background: rgba(255,255,255,0.94); border-radius:20px; padding:20px; margin-bottom:20px; border:1px solid rgba(79,129,189,0.3); position:relative; overflow:hidden; }
+        .academic-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background: linear-gradient(to bottom, #1e40af, #8b5cf6); }
+        .footer { text-align:center; padding:15px 0; color:#1e40af; border-top:1px solid rgba(30,64,175,0.1); }
+        .warning-box { background: rgba(254,243,199,0.9); border-radius:20px; padding:16px; margin-top:15px; font-size:0.85rem; }
+        .keyword-tag { display:inline-block; padding:8px 16px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; border-radius:25px; margin:5px; cursor:pointer; transition:0.2s; }
+        .difficult-word-item { background:white; border-radius:10px; padding:12px; text-align:center; border-left:5px solid; margin:8px; display:inline-block; width:130px; cursor:pointer; }
+        @media (max-width: 800px) {
+            .avatar { width: 100px; height: 100px; }
+            .header h1 { font-size: 2.2rem; }
+            .header-subtitle { font-size: 1rem; }
+            .header-placeholder, .header-right { width: 90px; }
+            .home-btn span { display: none; }
+            .home-btn { padding: 8px 12px; }
+        }
+        @media (max-width: 600px) {
+            .main-content { grid-template-columns: 1fr; }
+            .analyzer-card, .results-card { height: auto; min-height: 600px; }
+            .header-center { gap: 15px; }
+            .avatar { width: 75px; height: 75px; }
+            .header h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-placeholder"></div>
+        <div class="header-center">
+            <div class="avatar">
+                <img src="images/lingxi-avatar.png" alt="灵汐智能助教" class="avatar-img" onerror="this.classList.add('failed'); this.nextElementSibling.style.display='flex'">
+                <div class="avatar-fallback" style="display: none;">👧</div>
+            </div>
+            <div class="title-container">
+                <h1>教材分析</h1>
+                <p class="header-subtitle">总结教材文本主题 · 一键生成教学建议</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="home-btn" id="homeBtn"><i class="fas fa-home"></i><span>返回导航</span></button>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="analyzer-card">
+            <div class="card-title" style="display:flex; gap:10px; margin-bottom:20px;"><i class="fas fa-edit"></i><h2>文本输入</h2></div>
+            <textarea class="text-input" id="textInput" placeholder="请输入您要分析的中文文本..."></textarea>
+            <div class="action-buttons">
+                <button class="btn" onclick="analyzeEnhanced()"><i class="fas fa-robot"></i> 增强分析</button>
+                <button class="btn" onclick="clearText()" style="background: #64748b;"><i class="fas fa-eraser"></i> 清空</button>
+            </div>
+            <div class="examples"><h3><i class="fas fa-lightbulb"></i> 示例文本</h3><div class="example-list"><button class="example-btn" onclick="loadExample(1)">你好</button><button class="example-btn" onclick="loadExample(2)">你的中文很好</button><button class="example-btn" onclick="loadExample(3)">今天天气不错</button><button class="example-btn" onclick="loadExample(4)">我喜欢学习汉语</button><button class="example-btn" onclick="loadExample(5)">我们一起吃饭吧</button></div></div>
+            <div class="visualization-legend"><h3><i class="fas fa-palette"></i> 词汇难度可视化说明</h3><div class="visualization-grid"><div class="visualization-item"><div class="visualization-swatch" style="background:#93c5fd;"></div><span>HSK1</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#60a5fa;"></div><span>HSK2</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#3b82f6;"></div><span>HSK3</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#fbbf24;"></div><span>HSK4</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#f59e0b;"></div><span>HSK5</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#d97706;"></div><span>HSK6</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#dc2626;"></div><span>HSK7-9</span></div><div class="visualization-item"><div class="visualization-swatch" style="background:#9ca3af;"></div><span>超纲</span></div></div></div>
+            <div class="warning-box"><i class="fas fa-info-circle"></i> 增强分析使用qwen3:8b模型，长文本需1-3分钟，点击生词可检索搭配。</div>
+        </div>
+        <div class="results-card">
+            <div class="card-title" style="display:flex; gap:10px; margin-bottom:20px;"><i class="fas fa-chart-bar"></i><h2>分析结果</h2></div>
+            <div class="result-content" id="resultContainer"><div id="resultContent"><p style="text-align:center; padding:30px;"><i class="fas fa-search" style="font-size:2rem;"></i><br>输入文本后点击分析按钮开始</p></div></div>
+        </div>
+    </div>
+    <div class="footer"><p>文本完整分析 | AI增强分析 | Python API: http://127.0.0.1:5000</p></div>
+</div>
+<script>
+    const homeBtn = document.getElementById('homeBtn');
+    if(homeBtn) homeBtn.addEventListener('click', ()=> window.location.href='智能中文助教 · 导航.html');
+    function searchCollocationForWord(word) { if(word) window.open(`词语搭配检索.html?word=${encodeURIComponent(word)}`, '_blank'); }
+    function calculateKeywordCount(len) { if(len<=100) return 2; let extra = Math.ceil((len-100)/50); return Math.min(2+extra,6); }
+    async function analyzeEnhanced() {
+        const text = document.getElementById('textInput').value.trim();
+        if(!text) { alert('请输入文本'); return; }
+        const resultDiv = document.getElementById('resultContent');
+        resultDiv.innerHTML = '<div class="loading" style="text-align:center;padding:40px;"><div class="spinner"></div><p>AI分析中，可能需要1-3分钟...</p></div>';
+        try {
+            const keywordCount = calculateKeywordCount(text.length);
+            const res = await fetch('http://localhost:5000/api/enhanced_analyze', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text, keyword_count: keywordCount }) });
+            const data = await res.json();
+            if(data.success) displayEnhancedResult(data, text.length, keywordCount);
+            else resultDiv.innerHTML = `<div class="academic-card">分析失败: ${data.error}</div>`;
+        } catch(e) { resultDiv.innerHTML = `<div class="academic-card">错误: ${e.message}</div>`; }
+    }
+    function displayEnhancedResult(data, textLength, keywordCount) {
+        const result = data.result;
+        const enhanced = result.enhanced_analysis || {};
+        const themeKeywords = enhanced.theme_keywords || {};
+        const theme = themeKeywords.theme || '日常话题';
+        let keywords = (themeKeywords.keywords || []).slice(0, keywordCount);
+        const teaching = enhanced.teaching_analysis?.raw || '暂无教学建议';
+        const prediction = result.prediction || {};
+        const level = prediction.level || 'HSK3';
+        const colored = result.colored_text || '';
+        const analysis = result.analysis || {};
+        const wordLevels = analysis.word_level_full_list || {};
+        const allWords = [];
+        Object.entries(wordLevels).forEach(([lvl, words]) => { if(Array.isArray(words)) words.forEach(w=> allWords.push({word:w, level:lvl})); });
+        const difficult = allWords.filter(w => { const idx = ['HSK1','HSK2','HSK3','HSK4','HSK5','HSK6','HSK7-9'].indexOf(w.level); const predIdx = ['HSK1','HSK2','HSK3','HSK4','HSK5','HSK6','HSK7-9'].indexOf(level); return idx >= predIdx || w.level === '超纲'; });
+        let html = `<div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-robot"></i> AI增强分析报告</div><div class="academic-badge">${level}</div></div><div><span>置信度: ${((prediction.confidence||0.8)*100).toFixed(1)}%</span><span style="margin-left:20px;">文本长度: ${textLength}</span></div><div style="margin-top:15px;"><h4>📖 主题: ${escapeHtml(theme)}</h4><div>关键词: ${keywords.map(k=>`<span class="keyword-tag" onclick="searchCollocationForWord('${escapeJs(k)}')">${escapeHtml(k)}</span>`).join('')}</div></div></div>`;
+        if(colored) html += `<div class="academic-card"><div class="academic-title">词汇难度可视化</div><div class="colored-text-container" style="background:#f8fafc; padding:16px; border-radius:16px;">${colored}</div></div>`;
+        if(difficult.length) { html += `<div class="academic-card"><div class="academic-title">📌 生词识别 (≥${level})</div><div>`; difficult.slice(0,30).forEach(w=>{ html+=`<span class="difficult-word-item" style="border-left-color:#f59e0b;" onclick="searchCollocationForWord('${escapeJs(w.word)}')">${escapeHtml(w.word)}<span style="display:block; font-size:0.7rem;">${w.level}</span></span>`; }); html+=`</div></div>`; }
+        html += `<div class="academic-card"><div class="academic-title">💡 智能教学建议</div><div style="white-space:pre-wrap;">${escapeHtml(teaching).replace(/\n/g,'<br>')}</div></div>`;
+        document.getElementById('resultContent').innerHTML = html;
+    }
+    function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    function escapeJs(s) { return s.replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+    function clearText() { document.getElementById('textInput').value=''; document.getElementById('resultContent').innerHTML='<p style="text-align:center;padding:30px;"><i class="fas fa-search"></i><br>输入文本后点击分析按钮开始</p>'; }
+    function loadExample(n) { const ex={1:'你好',2:'你的中文很好',3:'今天天气不错',4:'我喜欢学习汉语，因为中文很有意思。中国的文化历史悠久。',5:'明天要去图书馆学习准备考试，随后会去看电影。'}; document.getElementById('textInput').value=ex[n]; }
+    const style = document.createElement('style'); style.textContent = `.academic-badge { background: linear-gradient(135deg,#1e40af,#3730a3); color:white; padding:5px 12px; border-radius:15px; } .spinner { width:40px; height:40px; border:3px solid #cbd5e1; border-top-color:#8b5cf6; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto; } @keyframes spin { to { transform:rotate(360deg); } } .keyword-tag:hover, .difficult-word-item:hover { transform: translateY(-2px); }`; document.head.appendChild(style);
+</script>
+</body>
+</html>

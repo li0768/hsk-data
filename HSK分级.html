@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>文本指南针 - 灵汐智能中文助教</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', 'Microsoft YaHei', 'Segoe UI', system-ui, -apple-system, 'SF Pro Text', 'Roboto', sans-serif;
+            background: linear-gradient(180deg, 
+                #C2DBFF 0%,
+                #CCE3FF 6%,
+                #D9EAFF 15%,
+                #E6F0FF 28%,
+                #F0F6FF 48%,
+                #F8FBFE 72%,
+                #FFFFFF 90%,
+                #FFFFFF 100%
+            );
+            min-height: 100vh;
+            color: #333;
+            padding: 10px;
+            background-attachment: fixed;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-height: 96vh;
+            gap: 15px;
+        }
+        /* 全新头部布局：使用flex，左右两侧宽度对称，中间标题图标区自然居中 - 放大醒目版 */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0 20px 0;
+            flex-shrink: 0;
+            position: relative;
+            width: 100%;
+        }
+        .header-placeholder {
+            width: 130px;
+            visibility: hidden;
+        }
+        .header-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            flex: 1;
+        }
+        .avatar-container {
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+        }
+        .avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 5px solid white;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            background-color: transparent;
+            transition: transform 0.2s ease;
+        }
+        .avatar:hover { transform: scale(1.02); }
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .avatar-img.failed { display: none; }
+        .avatar-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 3.5rem;
+        }
+        .title-container {
+            text-align: left;   /* 标题容器文字居中 */
+        }
+        .header h1 {
+            font-size: 3rem;      /* 放大主标题 */
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.08);
+            background: linear-gradient(115deg, #0A3E6D 0%, #1B5A8C 25%, #2A6FA8 50%, #1F5E8E 75%, #0C4675 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .header-subtitle {
+            font-size: 1.2rem;    /* 放大副标题 */
+            color: #2c5a82;
+            opacity: 0.9;
+            line-height: 1.3;
+            font-weight: 500;
+            text-align: center;    /* 关键：副标题居中对齐 */
+            margin-top: 4px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 130px;
+        }
+        .home-btn {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #1e40af;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            white-space: nowrap;
+        }
+        .home-btn i { font-size: 1rem; }
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.98);
+            border-color: rgba(59, 130, 246, 0.7);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.15);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 15px;
+            flex: 1;
+            min-height: 0;
+        }
+        .analyzer-card, .results-card {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 8px 18px -10px rgba(31, 84, 136, 0.2), 0 0 0 1px rgba(79, 129, 189, 0.45), 0 0 0 3px rgba(255, 255, 255, 0.75);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+            min-height: 850px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #1F5488;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            border-bottom: 2px solid rgba(79, 129, 189, 0.3);
+            padding-bottom: 12px;
+        }
+        .text-input {
+            width: 100%;
+            height: 260px;
+            min-height: 240px;
+            max-height: 400px;
+            padding: 18px;
+            border: 2px solid rgba(79, 129, 189, 0.3);
+            border-radius: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            margin-bottom: 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 15px 0 20px 0;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+            width: 100%;
+        }
+        .btn {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+        .result-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 650px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .result-content::-webkit-scrollbar { width: 6px; }
+        .result-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .result-content::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #1e40af;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .examples {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 16px;
+            margin-top: 15px;
+            border: 1px solid rgba(79, 129, 189, 0.3);
+            flex-shrink: 0;
+        }
+        .examples h3 {
+            margin-bottom: 10px;
+            color: #1F5488;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .example-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .example-btn {
+            padding: 7px 14px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(79, 129, 189, 0.4);
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1F5488;
+        }
+        .visualization-legend {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 16px;
+            margin: 15px 0 0 0;
+            border: 1px solid rgba(79, 129, 189, 0.3);
+            flex-shrink: 0;
+        }
+        .visualization-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .visualization-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+        .visualization-swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .visualization-label {
+            font-size: 0.85rem;
+            color: #2c5a82;
+            font-weight: 500;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px 0;
+            color: #1e40af;
+            margin-top: auto;
+            border-top: 1px solid rgba(30, 64, 175, 0.1);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .academic-card {
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(79, 129, 189, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .academic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #1e40af, #8b5cf6);
+        }
+        .academic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(79, 129, 189, 0.2);
+        }
+        .academic-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1F5488;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .academic-badge {
+            background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .academic-progress { margin-top: 15px; }
+        .academic-progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .academic-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1e40af);
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+        .academic-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .academic-stat {
+            background: rgba(248, 250, 252, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(79, 129, 189, 0.2);
+        }
+        .academic-stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 5px;
+        }
+        .colored-text-container {
+            padding: 16px;
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 8px;
+            border: 1px solid rgba(79, 129, 189, 0.2);
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .hsk-word-hsk1 { color: #1e88e5; font-weight: 500; }
+        .hsk-word-hsk2 { color: #42a5f5; font-weight: 500; }
+        .hsk-word-hsk3 { color: #64b5f6; font-weight: 500; }
+        .hsk-word-hsk4 { color: #f57c00; font-weight: 500; }
+        .hsk-word-hsk5 { color: #ef6c00; font-weight: 500; }
+        .hsk-word-hsk6 { color: #e65100; font-weight: 500; }
+        .hsk-word-hsk7-9 { color: #c62828; font-weight: 500; }
+        .hsk-word-unknown, .hsk-word-超纲 { color: #9e9e9e; font-weight: 500; }
+        .level-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(249, 250, 251, 0.6);
+            border-radius: 6px;
+            border-left: 4px solid;
+            border: 1px solid rgba(79, 129, 189, 0.2);
+        }
+        .level-label { width: 90px; font-weight: 600; color: #374151; font-size: 0.9rem; }
+        .level-count { width: 70px; font-weight: bold; color: #1e40af; text-align: right; font-size: 0.9rem; }
+        .level-chars { flex: 1; font-family: monospace; font-size: 1rem; color: #4b5563; margin-left: 12px; }
+        .clickable-char, .clickable-word { cursor: pointer; transition: all 0.2s; margin-right: 2px; display: inline-block; padding: 0 2px; border-radius: 4px; }
+        .clickable-char:hover, .clickable-word:hover { background-color: #e2e8f0; transform: scale(1.02); }
+        .unknown-word-tag {
+            padding: 5px 10px;
+            background: white;
+            border: 1px solid #f59e0b;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            color: #92400e;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            margin: 4px;
+        }
+        @media (max-width: 1000px) {
+            .avatar { width: 110px; height: 110px; }
+            .header h1 { font-size: 2.4rem; }
+            .header-subtitle { font-size: 1rem; }
+            .header-placeholder, .header-right { width: 100px; }
+        }
+        @media (max-width: 700px) {
+            .header-center { gap: 15px; }
+            .avatar { width: 80px; height: 80px; }
+            .avatar-fallback { font-size: 2.2rem; }
+            .header h1 { font-size: 1.9rem; }
+            .home-btn span { display: none; }
+            .home-btn { padding: 8px 12px; }
+            .header-placeholder, .header-right { width: 60px; }
+            .header-subtitle { font-size: 0.85rem; }
+        }
+        @media (max-width: 600px) {
+            .main-content { grid-template-columns: 1fr; gap: 20px; }
+            .analyzer-card, .results-card { height: auto; min-height: 600px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-placeholder"></div>
+        <div class="header-center">
+            <div class="avatar-container">
+                <div class="avatar">
+                    <img src="images/lingxi-avatar.png" alt="灵汐智能助教" class="avatar-img"
+                         onerror="this.classList.add('failed'); this.nextElementSibling.style.display='flex'">
+                    <div class="avatar-fallback" style="display: none;">👧</div>
+                </div>
+            </div>
+            <div class="title-container">
+                <h1>HSK分级</h1>
+                <p class="header-subtitle">智能预测文本难度 · 深度解析词汇分布</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="home-btn" id="homeBtn">
+                <i class="fas fa-home"></i>
+                <span>返回导航</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="analyzer-card">
+            <div class="card-title"><i class="fas fa-edit"></i><h2>文本输入</h2></div>
+            <textarea class="text-input" id="textInput" placeholder="请输入您要分析的中文文本..."></textarea>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="analyzeComprehensive()"><i class="fas fa-search"></i> 完整分析</button>
+                <button class="btn" onclick="clearText()" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white;"><i class="fas fa-eraser"></i> 清空</button>
+            </div>
+            <div class="examples">
+                <h3><i class="fas fa-lightbulb"></i> 示例文本</h3>
+                <div class="example-list">
+                    <button class="example-btn" onclick="loadExample(1)">你好</button>
+                    <button class="example-btn" onclick="loadExample(2)">你的中文很好</button>
+                    <button class="example-btn" onclick="loadExample(3)">今天天气不错</button>
+                    <button class="example-btn" onclick="loadExample(4)">我喜欢学习汉语</button>
+                    <button class="example-btn" onclick="loadExample(5)">我们一起吃饭吧</button>
+                </div>
+            </div>
+            <div class="visualization-legend">
+                <h3><i class="fas fa-palette"></i> 词汇难度可视化说明</h3>
+                <div class="visualization-grid">
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #93c5fd;"></div><span class="visualization-label">HSK1</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #60a5fa;"></div><span class="visualization-label">HSK2</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #3b82f6;"></div><span class="visualization-label">HSK3</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #fbbf24;"></div><span class="visualization-label">HSK4</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #f59e0b;"></div><span class="visualization-label">HSK5</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #d97706;"></div><span class="visualization-label">HSK6</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #dc2626;"></div><span class="visualization-label">HSK7-9</span></div>
+                    <div class="visualization-item"><div class="visualization-swatch" style="background-color: #9ca3af;"></div><span class="visualization-label">超纲</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="results-card">
+            <div class="card-title"><i class="fas fa-chart-bar"></i><h2>分析结果</h2></div>
+            <div class="result-content" id="resultContainer">
+                <div class="loading" id="loadingIndicator" style="display: none;"><div class="spinner"></div><p>正在分析中，请稍候...</p><p id="loadingDetail" style="font-size: 0.85rem;"></p></div>
+                <div id="resultContent"><p style="text-align: center; color: #a0aec0; padding: 30px;"><i class="fas fa-search" style="font-size: 2.5rem; margin-bottom: 10px; display: block;"></i>输入文本后点击分析按钮开始</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="footer"><p>文本指南针 | 完整分析版 | Python API: http://127.0.0.1:5000</p></div>
+</div>
+<script>
+    const levelColors = { "HSK1": "#93c5fd", "HSK2": "#60a5fa", "HSK3": "#3b82f6", "HSK4": "#fbbf24", "HSK5": "#f59e0b", "HSK6": "#d97706", "HSK7-9": "#dc2626", "超纲": "#9ca3af" };
+    const homeBtn = document.getElementById('homeBtn');
+    if(homeBtn) homeBtn.addEventListener('click', () => { window.location.href = '智能中文助教 · 导航.html'; });
+    function searchCollocationForWord(word) { if(word) window.open(`词语搭配检索.html?word=${encodeURIComponent(word)}`, '_blank'); }
+    async function analyzeComprehensive() {
+        const text = document.getElementById('textInput').value.trim();
+        const resultContent = document.getElementById('resultContent');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if(!text) { alert('请输入要分析的文本'); return; }
+        resultContent.innerHTML = '';
+        loadingIndicator.style.display = 'block';
+        try {
+            const response = await fetch('http://localhost:5000/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, simple: false }) });
+            if(!response.ok) throw new Error(`API请求失败: ${response.status}`);
+            const data = await response.json();
+            loadingIndicator.style.display = 'none';
+            if(data.success) displayComprehensiveResult(data.result);
+            else resultContent.innerHTML = `<div class="academic-card">分析失败: ${data.error}</div>`;
+        } catch(error) { loadingIndicator.style.display = 'none'; resultContent.innerHTML = `<div class="academic-card">错误: ${error.message}</div>`; }
+    }
+    function displayComprehensiveResult(result) {
+        const prediction = result.prediction || {};
+        const analysis = result.analysis || {};
+        const features = analysis.features || {};
+        const charLevelFullList = analysis.char_level_full_list || {};
+        const wordLevelFullList = analysis.word_level_full_list || {};
+        const unknownWords = analysis.unknown_tokens || features.unknown_words || [];
+        const hskLevels = ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9', '超纲'];
+        let html = `<div class="fade-in"><div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-graduation-cap"></i> 完整分析结果</div><div class="academic-badge">${escapeHtml(prediction.level || 'HSK3')}</div></div><div class="academic-content"><div class="academic-progress"><div class="academic-progress-label"><span>分析置信度</span><span><strong>${((prediction.confidence || 0.8) * 100).toFixed(1)}%</strong></span></div><div class="academic-progress-bar"><div class="academic-progress-fill" style="width: ${(prediction.confidence || 0.8) * 100}%"></div></div></div><div class="academic-stats"><div class="academic-stat"><div class="academic-stat-value">${features.text_length || 0}</div><div class="academic-stat-label">文本长度</div></div><div class="academic-stat"><div class="academic-stat-value">${features.chinese_char_count || 0}</div><div class="academic-stat-label">中文字符</div></div><div class="academic-stat"><div class="academic-stat-value">${features.sentence_count || 0}</div><div class="academic-stat-label">句子数量</div></div><div class="academic-stat"><div class="academic-stat-value">${escapeHtml(prediction.level || 'HSK3')}</div><div class="academic-stat-label">预测级别</div></div></div></div></div>`;
+        if(result.colored_text) html += `<div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-palette"></i> 词汇难度可视化</div></div><div class="colored-text-container">${result.colored_text}</div><p style="color:#718096;font-size:0.85rem;"><i class="fas fa-info-circle"></i> 颜色表示词汇的HSK难度级别</p></div>`;
+        html += `<div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-font"></i> 汉字级别分布</div></div><div class="level-distribution">`;
+        let hasCharData = false;
+        hskLevels.forEach(level => { const charData = charLevelFullList[level]; if(charData && charData.count > 0) { hasCharData = true; const charsHtml = (charData.items || []).map(char => `<span class="clickable-char" onclick="searchCollocationForWord('${escapeJs(char)}')">${escapeHtml(char)}</span>`).join(''); html += `<div class="level-row" style="border-left-color: ${levelColors[level]};"><div class="level-label">${level}</div><div class="level-count">${charData.count}字</div><div class="level-chars">${charsHtml}</div></div>`; } });
+        if(!hasCharData) html += `<p style="color:#6b7280; text-align:center; padding:20px;">无汉字数据</p>`;
+        html += `</div></div><div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-book"></i> 词汇级别分布</div></div><div class="level-distribution">`;
+        let hasWordData = false;
+        hskLevels.forEach(level => { const wordItems = wordLevelFullList[level]; if(wordItems && wordItems.length > 0) { hasWordData = true; const wordsHtml = wordItems.slice(0, 15).map(word => `<span class="clickable-word" onclick="searchCollocationForWord('${escapeJs(word)}')">${escapeHtml(word)}</span>`).join('、'); html += `<div class="level-row" style="border-left-color: ${levelColors[level]};"><div class="level-label">${level}</div><div class="level-count">${wordItems.length}词</div><div class="level-chars">${wordsHtml}${wordItems.length > 15 ? '...' : ''}</div></div>`; } });
+        if(!hasWordData) html += `<p style="color:#6b7280; text-align:center;">无词汇数据</p>`;
+        html += `</div></div>`;
+        if(unknownWords.length > 0) { html += `<div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-exclamation-circle"></i> 生词识别</div><span>共 ${unknownWords.length} 个</span></div><div>`; unknownWords.slice(0, 25).forEach(word => { html += `<span class="unknown-word-tag" onclick="searchCollocationForWord('${escapeJs(word)}')">${escapeHtml(word)}</span>`; }); html += `</div></div>`; }
+        if(prediction.probabilities) { html += `<div class="academic-card"><div class="academic-header"><div class="academic-title"><i class="fas fa-chart-bar"></i> 概率分布</div></div><div class="probability-distribution">`; Object.entries(prediction.probabilities).forEach(([level, prob]) => { const color = levelColors[level] || '#9ca3af'; html += `<div class="probability-row"><div class="probability-label">${level}</div><div class="probability-value">${(prob*100).toFixed(1)}%</div><div class="probability-bar-small"><div class="probability-fill-small" style="width:${prob*100}%; background:${color}; height:8px;"></div></div></div>`; }); html += `</div></div>`; }
+        html += `</div>`;
+        document.getElementById('resultContent').innerHTML = html;
+    }
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
+    function escapeJs(str) { if(!str) return ''; return str.replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+    function clearText() { document.getElementById('textInput').value = ''; document.getElementById('resultContent').innerHTML = `<p style="text-align: center; color: #a0aec0; padding: 30px;"><i class="fas fa-search" style="font-size: 2.5rem; margin-bottom: 10px; display: block;"></i>输入文本后点击分析按钮开始</p>`; }
+    function loadExample(num) { const examples = { 1: '你好', 2: '你的中文很好', 3: '今天天气不错', 4: '我喜欢学习汉语，因为中文很有意思。中国的文化历史悠久，有很多值得学习的地方。', 5: '明天要去图书馆学习准备考试，随后会去看电影。' }; document.getElementById('textInput').value = examples[num]; }
+</script>
+</body>
+</html>

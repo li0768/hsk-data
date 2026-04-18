@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语言科技：语言计算赋能中文教育和华语传承</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: white;
+            color: #333;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        }
+        
+        /* 主容器 - 单页布局 */
+        .single-page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: space-between; /* 确保内容分布 */
+        }
+        
+        /* 顶部区域 */
+        .top-section {
+            flex-shrink: 0;
+            padding: 25px 40px 20px;
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* 头部样式 - 修改为水平布局 */
+        header {
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: 100%;
+            gap: 25px; /* logo和标语之间的间距 */
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* 防止logo被压缩 */
+        }
+        
+        /* 放大logo */
+        .logo-img {
+            height: 65px; /* 放大logo：从55px增加到65px */
+            width: auto;
+            transition: height 0.3s ease;
+        }
+        
+        /* 标语区域 - 修改为与logo同行 */
+        .slogan-section {
+            flex: 1;
+            text-align: left;
+        }
+        
+        /* 缩小标语 */
+        .slogan {
+            font-size: 24px; /* 缩小标语：从28px减少到24px */
+            font-weight: 700;
+            color: #777; /* 改为浅灰色 */
+            letter-spacing: 1.5px;
+            line-height: 1.3;
+            /* 移除下划线相关的样式 */
+        }
+        
+        /* 移除原来的下划线 */
+        .slogan::before {
+            display: none;
+        }
+        
+        /* 关于链接样式 */
+        .about-link {
+            text-decoration: none;
+            color: #1a73e8;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 5px 0;
+            transition: all 0.3s ease;
+            position: absolute;
+            right: 40px;
+            top: 35px;
+        }
+        
+        .about-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: #1a73e8;
+            transition: width 0.3s ease;
+        }
+        
+        .about-link:hover::after {
+            width: 100%;
+        }
+        
+        .about-link:hover {
+            color: #0d47a1;
+        }
+        
+        /* 中间内容区域 - 减小下边距，使更贴近底部 */
+        .middle-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            margin-bottom: 10px; /* 大幅减少下边距 */
+        }
+        
+        /* 滚动屏样式 - 增加高度 */
+        .carousel-section {
+            flex: 2.2; /* 增加比例，使滚动屏更大 */
+            width: 100%;
+            position: relative;
+        }
+        
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            padding: 0;
+        }
+        
+        /* 全屏卡片幻灯片 */
+        .fullscreen-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .fullscreen-card.active {
+            opacity: 1;
+        }
+        
+        /* 卡片内容区域 */
+        .card-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 全屏图片样式 */
+        .fullscreen-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            position: relative;
+            z-index: 1;
+            background-color: white;
+        }
+        
+        /* 卡片背景颜色 */
+        .card-content[data-theme="blue"] {
+            background: #e8f0fe;
+        }
+        
+        .card-content[data-theme="green-blue"] {
+            background: #e3f2fd;
+        }
+        
+        .card-content[data-theme="purple"] {
+            background: #f3e5f5;
+        }
+        
+        .card-content[data-theme="orange"] {
+            background: #fff3e0;
+        }
+        
+        .card-content[data-theme="pink"] {
+            background: #fce4ec;
+        }
+        
+        /* 隐形指向箭头 */
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: transparent;
+            color: rgba(255, 255, 255, 0);
+            border: none;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+            opacity: 0;
+        }
+        
+        .carousel-arrow i {
+            font-size: 36px;
+            color: rgba(255, 255, 255, 0);
+            transition: all 0.3s ease;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0);
+        }
+        
+        .carousel-container:hover .carousel-arrow {
+            opacity: 1;
+        }
+        
+        .carousel-container:hover .carousel-arrow i {
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .carousel-arrow:hover {
+            transform: translateY(-50%) scale(1.2);
+        }
+        
+        .carousel-arrow:hover i {
+            color: white;
+            text-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .carousel-prev {
+            left: 20px;
+        }
+        
+        .carousel-next {
+            right: 20px;
+        }
+        
+        /* 导航点 */
+        .carousel-nav {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            z-index: 10;
+        }
+        
+        .carousel-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        
+        .carousel-dot.active {
+            background-color: white;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 图标导航区域 - 减少上边距 */
+        .icons-section {
+            flex: 0.6;
+            padding: 5px 40px 10px; /* 减少底部内边距 */
+            background: white;
+            margin-top: 5px; /* 大幅减少上边距 */
+        }
+        
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            height: 100%;
+            max-height: 100px;
+        }
+        
+        .icon-card {
+            background: white;
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 图标边框颜色 */
+        .icon-card:nth-child(1):hover {
+            border-color: #FFB74D;
+            box-shadow: 0 8px 20px rgba(255, 183, 77, 0.25);
+            transform: translateY(-5px);
+        }
+        
+        .icon-card:nth-child(2):hover {
+            border-color: #4CAF50;
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.25);
+            transform: translateY(-5px);
+        }
+        
+        .icon-card:nth-child(3):hover {
+            border-color: #2196F3;
+            box-shadow: 0 8px 20px rgba(33, 150, 243, 0.25);
+            transform: translateY(-5px);
+        }
+        
+        .icon-card:nth-child(4):hover {
+            border-color: #AB47BC;
+            box-shadow: 0 8px 20px rgba(171, 71, 188, 0.25);
+            transform: translateY(-5px);
+        }
+        
+        .icon-img {
+            width: 85%;
+            height: 80%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 2px;
+        }
+        
+        .icon-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.4s ease;
+        }
+        
+        .icon-card:hover .icon-img img {
+            transform: scale(1.12);
+        }
+        
+        /* 底部页脚 - 更小的二维码 */
+        footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 40px; /* 减少内边距 */
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        /* 更小的二维码容器 */
+        .qrcode-container {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* 减少间距 */
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        
+        .qrcode-img {
+            width: 55px; /* 进一步缩小 */
+            height: 55px; /* 进一步缩小 */
+            border-radius: 6px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .qrcode-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .qrcode-text {
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 12px; /* 缩小字体 */
+            color: #333;
+            font-weight: 500;
+            text-align: left;
+        }
+        
+        .qrcode-text p:first-child {
+            color: #1a73e8;
+            margin-bottom: 4px;
+            font-size: 13px; /* 缩小字体 */
+            font-weight: 600;
+        }
+        
+        .qrcode-text p:last-child {
+            color: #666;
+            font-size: 11px; /* 缩小字体 */
+            font-weight: normal;
+        }
+        
+        /* 添加联系我们链接样式 */
+        .contact-link {
+            color: #1a73e8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .contact-link:hover {
+            color: #0d47a1;
+            text-decoration: underline;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .slogan {
+                font-size: 22px; /* 相应缩小 */
+            }
+            
+            .logo-img {
+                height: 60px; /* 相应缩小 */
+            }
+            
+            .top-section {
+                padding: 20px 30px 15px;
+            }
+            
+            .qrcode-img {
+                width: 50px;
+                height: 50px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .top-section {
+                padding: 15px 25px 10px;
+                min-height: 100px;
+            }
+            
+            .slogan {
+                font-size: 20px; /* 相应缩小 */
+                letter-spacing: 1px;
+            }
+            
+            .logo-img {
+                height: 55px; /* 相应缩小 */
+            }
+            
+            .about-link {
+                right: 25px;
+                top: 30px;
+            }
+            
+            .middle-section {
+                margin-bottom: 5px;
+            }
+            
+            .carousel-section {
+                flex: 2.5; /* 移动端增加比例 */
+            }
+            
+            .icons-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                max-height: 130px;
+            }
+            
+            .icons-section {
+                margin-top: 3px;
+                padding: 5px 30px 8px;
+            }
+            
+            .carousel-arrow {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .carousel-arrow i {
+                font-size: 28px;
+            }
+            
+            footer {
+                padding: 6px 30px;
+            }
+            
+            .qrcode-container {
+                gap: 12px;
+            }
+            
+            .qrcode-img {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .qrcode-text p:first-child {
+                font-size: 12px;
+            }
+            
+            .qrcode-text p:last-child {
+                font-size: 10px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .single-page-container {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+            
+            .top-section {
+                padding: 12px 20px 8px;
+                flex-direction: column;
+                align-items: flex-start;
+                min-height: auto;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+                gap: 15px;
+            }
+            
+            .slogan-section {
+                position: relative;
+                transform: none;
+                top: auto;
+                margin-top: 0;
+                width: 100%;
+                text-align: left;
+            }
+            
+            .slogan {
+                font-size: 18px; /* 相应缩小 */
+                letter-spacing: 0.8px;
+                padding: 0;
+            }
+            
+            .logo {
+                margin-top: 0;
+            }
+            
+            .logo-img {
+                height: 50px; /* 相应缩小 */
+            }
+            
+            .about-link {
+                position: absolute;
+                right: 20px;
+                top: 15px;
+            }
+            
+            .middle-section {
+                margin-bottom: 0;
+            }
+            
+            .icons-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                max-height: 160px;
+            }
+            
+            .icons-section {
+                margin-top: 0;
+                padding: 5px 20px 5px;
+            }
+            
+            .carousel-arrow {
+                width: 50px;
+                height: 50px;
+                opacity: 0.7;
+            }
+            
+            .carousel-arrow i {
+                font-size: 24px;
+                color: rgba(255, 255, 255, 0.9);
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            }
+            
+            footer {
+                padding: 5px 20px;
+            }
+            
+            .qrcode-container {
+                gap: 10px;
+            }
+            
+            .qrcode-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .qrcode-text {
+                font-size: 11px;
+            }
+            
+            .qrcode-text p:first-child {
+                font-size: 11px;
+                margin-bottom: 3px;
+            }
+            
+            .qrcode-text p:last-child {
+                font-size: 9px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .slogan {
+                font-size: 16px; /* 相应缩小 */
+                letter-spacing: 0.5px;
+            }
+            
+            .logo-img {
+                height: 45px; /* 相应缩小 */
+            }
+            
+            .about-link {
+                font-size: 14px;
+                top: 12px;
+            }
+            
+            .carousel-arrow {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .carousel-arrow i {
+                font-size: 20px;
+            }
+            
+            .carousel-prev {
+                left: 10px;
+            }
+            
+            .carousel-next {
+                right: 10px;
+            }
+            
+            .qrcode-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 8px;
+            }
+            
+            .qrcode-img {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .qrcode-text {
+                text-align: center;
+                font-size: 10px;
+            }
+            
+            .qrcode-text p:first-child {
+                font-size: 10px;
+            }
+            
+            .qrcode-text p:last-child {
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 单页布局容器 -->
+    <div class="single-page-container">
+        <!-- 顶部区域 -->
+        <div class="top-section">
+            <header>
+                <div class="logo">
+                    <img src="网站logo.png" alt="语言科技" class="logo-img">
+                </div>
+                
+                <!-- 标语区域 - 现在与logo同行 -->
+                <div class="slogan-section">
+                    <div class="slogan">语言计算赋能中文教育和华语传承</div>
+                </div>
+                
+                <!-- 关于链接 -->
+                <a href="https://example.com/about" target="_blank" class="about-link">关于</a>
+            </header>
+        </div>
+        
+        <!-- 中间区域：滚动屏和图标 -->
+        <div class="middle-section">
+            <!-- 滚动屏区域 -->
+            <section class="carousel-section">
+                <div class="carousel-container">
+                    <!-- 卡片1：外语教学研究 -->
+                    <div class="fullscreen-card active">
+                        <div class="card-content" data-theme="blue">
+                            <img src="First images/hanyuzhuyan.jpg" alt="外语教学研究" class="fullscreen-image">
+                        </div>
+                    </div>
+                    
+                    <!-- 卡片2：中文教育研究 -->
+                    <div class="fullscreen-card">
+                        <div class="card-content" data-theme="green-blue">
+                            <img src="First images/lanke.jpg" alt="中文教育研究" class="fullscreen-image">
+                        </div>
+                    </div>
+                    
+                    <!-- 卡片3：生成式AI应用研究 -->
+                    <div class="fullscreen-card">
+                        <div class="card-content" data-theme="purple">
+                            <img src="First images/yuliaoku.jpg" alt="生成式AI应用研究" class="fullscreen-image">
+                        </div>
+                    </div>
+                    
+                    <!-- 卡片4：语言计算研究 -->
+                    <div class="fullscreen-card">
+                        <div class="card-content" data-theme="orange">
+                            <img src="First images/jisuanji.png" alt="语言计算研究" class="fullscreen-image">
+                        </div>
+                    </div>
+                    
+                    <!-- 卡片5：大模型赋能中文教学案例库 -->
+                    <div class="fullscreen-card">
+                        <div class="card-content" data-theme="pink">
+                            <img src="First images/damoxing.jpg" alt="大模型赋能中文教学案例库" class="fullscreen-image">
+                        </div>
+                    </div>
+                    
+                    <!-- 隐形指向箭头 -->
+                    <button class="carousel-arrow carousel-prev" id="carouselPrev">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="carousel-arrow carousel-next" id="carouselNext">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <!-- 导航点 -->
+                    <div class="carousel-nav">
+                        <div class="carousel-dot active" data-index="0"></div>
+                        <div class="carousel-dot" data-index="1"></div>
+                        <div class="carousel-dot" data-index="2"></div>
+                        <div class="carousel-dot" data-index="3"></div>
+                        <div class="carousel-dot" data-index="4"></div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 图标导航区域 -->
+            <section class="icons-section">
+                <div class="icons-grid">
+                    <!-- 语言计算 -->
+                    <a href="https://example.com/language-computing" target="_blank" class="icon-card">
+                        <div class="icon-img">
+                            <img src="First images/language-calc-icon.png" alt="语言计算">
+                        </div>
+                    </a>
+                    
+                    <!-- 语料中心 -->
+                    <a href="https://example.com/corpus-center" target="_blank" class="icon-card">
+                        <div class="icon-img">
+                            <img src="First images/corpus-center-icon.png" alt="语料中心">
+                        </div>
+                    </a>
+                    
+                    <!-- 资源平台 -->
+                    <a href="https://example.com/resource-platform" target="_blank" class="icon-card">
+                        <div class="icon-img">
+                            <img src="First images/resource-platform-icon.png" alt="资源平台">
+                        </div>
+                    </a>
+                    
+                    <!-- 中文助教 -->
+                    <a href="file:///C:/Users/DF-Lenovo/Desktop/hsk_predictor%20-%201/%E6%99%BA%E8%83%BD%E4%B8%AD%E6%96%87%E5%8A%A9%E6%95%99%20%C2%B7%20%E5%AF%BC%E8%88%AA.html" target="_blank" class="icon-card">
+                        <div class="icon-img">
+                            <img src="First images/chinese-tutor-icon.png" alt="中文助教">
+                        </div>
+                    </a>
+                </div>
+            </section>
+        </div>
+        
+        <!-- 底部页脚 - 更小的二维码 -->
+        <footer>
+            <div class="qrcode-container">
+                <div class="qrcode-img">
+                    <img src="First images/9c74da483631ed5f4a6a2f1379544a07.jpg" alt="联系我们二维码">
+                </div>
+                <div class="qrcode-text">
+                    <!-- 将"扫码关注/联系我们"改为链接 -->
+                    <p><a href="https://example.com/contact" target="_blank" class="contact-link">扫码关注/联系我们</a></p>
+                    <p>获取最新资讯</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 全屏卡片滚动功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.fullscreen-card');
+            const dots = document.querySelectorAll('.carousel-dot');
+            const prevBtn = document.getElementById('carouselPrev');
+            const nextBtn = document.getElementById('carouselNext');
+            const carouselContainer = document.querySelector('.carousel-container');
+            let currentCard = 0;
+            let cardInterval;
+            let isHoveringArrows = false;
+            
+            // 初始化轮播
+            function initCarousel() {
+                updateCard();
+                startCardShow();
+            }
+            
+            // 更新当前显示的卡片
+            function updateCard() {
+                cards.forEach(card => card.classList.remove('active'));
+                dots.forEach(dot => dot.classList.remove('active'));
+                
+                cards[currentCard].classList.add('active');
+                dots[currentCard].classList.add('active');
+            }
+            
+            // 切换到下一张卡片
+            function nextCard() {
+                currentCard = (currentCard + 1) % cards.length;
+                updateCard();
+            }
+            
+            // 切换到上一张卡片
+            function prevCard() {
+                currentCard = (currentCard - 1 + cards.length) % cards.length;
+                updateCard();
+            }
+            
+            // 开始自动轮播
+            function startCardShow() {
+                cardInterval = setInterval(nextCard, 8000);
+            }
+            
+            // 停止自动轮播
+            function stopCardShow() {
+                clearInterval(cardInterval);
+            }
+            
+            // 事件监听
+            prevBtn.addEventListener('click', function() {
+                prevCard();
+                stopCardShow();
+                startCardShow();
+            });
+            
+            nextBtn.addEventListener('click', function() {
+                nextCard();
+                stopCardShow();
+                startCardShow();
+            });
+            
+            // 鼠标悬停箭头效果
+            [prevBtn, nextBtn].forEach(btn => {
+                btn.addEventListener('mouseenter', () => isHoveringArrows = true);
+                btn.addEventListener('mouseleave', () => isHoveringArrows = false);
+            });
+            
+            // 点击导航点跳转
+            dots.forEach(dot => {
+                dot.addEventListener('click', function() {
+                    currentCard = parseInt(this.getAttribute('data-index'));
+                    updateCard();
+                    stopCardShow();
+                    startCardShow();
+                });
+            });
+            
+            // 鼠标悬停时暂停轮播
+            carouselContainer.addEventListener('mouseenter', () => {
+                if (!isHoveringArrows) stopCardShow();
+            });
+            
+            carouselContainer.addEventListener('mouseleave', () => {
+                if (!isHoveringArrows) startCardShow();
+            });
+            
+            // 键盘控制
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft') {
+                    prevCard();
+                    stopCardShow();
+                    startCardShow();
+                } else if (e.key === 'ArrowRight') {
+                    nextCard();
+                    stopCardShow();
+                    startCardShow();
+                }
+            });
+            
+            // 触摸滑动支持
+            let touchStartX = 0;
+            carouselContainer.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+            
+            carouselContainer.addEventListener('touchend', e => {
+                const touchEndX = e.changedTouches[0].screenX;
+                const swipeThreshold = 50;
+                
+                if (touchStartX - touchEndX > swipeThreshold) {
+                    nextCard();
+                } else if (touchEndX - touchStartX > swipeThreshold) {
+                    prevCard();
+                }
+                stopCardShow();
+                startCardShow();
+            });
+            
+            // 初始化轮播
+            initCarousel();
+        });
+    </script>
+</body>
+</html>
