@@ -88,9 +88,8 @@ class EnhancedAnalysisGenerator:
             # 尝试多个可能的路径
             possible_paths = [
                 os.path.join(self.hsk_data_dir, 'data', '词汇.csv') if self.hsk_data_dir else None,
-                r"C:\Users\DF-Lenovo\Desktop\hsk_predictor - 1\data\词汇.csv",
-                r"C:\Users\DF-Lenovo\Desktop\hsk_predictor\data\词汇.csv",
-                os.path.join(os.path.dirname(__file__), '..', 'data', '词汇.csv')
+                os.path.join(os.path.dirname(__file__), '..', 'data', '词汇.csv'),
+                os.path.join(os.path.dirname(__file__), 'data', '词汇.csv')   # 备用
             ]
             
             vocab_path = None
@@ -205,9 +204,8 @@ class EnhancedAnalysisGenerator:
             # 尝试多个可能的路径
             possible_paths = [
                 os.path.join(self.hsk_data_dir, 'data', '汉字.csv') if self.hsk_data_dir else None,
-                r"C:\Users\DF-Lenovo\Desktop\hsk_predictor - 1\data\汉字.csv",
-                r"C:\Users\DF-Lenovo\Desktop\hsk_predictor\data\汉字.csv",
-                os.path.join(os.path.dirname(__file__), '..', 'data', '汉字.csv')
+                os.path.join(os.path.dirname(__file__), '..', 'data', '汉字.csv'),
+                os.path.join(os.path.dirname(__file__), 'data', '汉字.csv')
             ]
             
             chars_path = None
@@ -1500,11 +1498,18 @@ class EnhancedAnalysisGenerator:
 _enhanced_analyzer = None
 
 def get_enhanced_analyzer(collocation_dir=None, hsk_data_dir=None, verbose=True):
-    """获取增强分析器全局实例"""
     global _enhanced_analyzer
     if _enhanced_analyzer is None:
-        dir_path = collocation_dir or r"C:\Users\DF-Lenovo\Desktop\hsk_predictor - 1\n"
-        hsk_path = hsk_data_dir or r"C:\Users\DF-Lenovo\Desktop\hsk_predictor - 1"
+        # 动态获取当前文件所在目录的上级目录（假设项目根目录）
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if collocation_dir is None:
+            dir_path = os.path.join(base_dir, 'n')
+        else:
+            dir_path = collocation_dir
+        if hsk_data_dir is None:
+            hsk_path = base_dir
+        else:
+            hsk_path = hsk_data_dir
         _enhanced_analyzer = EnhancedAnalysisGenerator(
             model_name="openai/gpt-oss-120b:free",
             collocation_dir=dir_path,
