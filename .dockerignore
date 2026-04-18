@@ -1,0 +1,21 @@
+# 排除模型文件（这些文件很大，不应该打包进镜像）
+models/*.pth
+models/*.bin
+*.pth
+*.bin
+
+# 排除搭配词库（如果你有很多 txt 文件，它们也可能很大）
+n/*.txt
+left/*.txt
+right/*.txt
+
+# 排除图片文件夹（如果不需要）
+First images/
+images/
+常用词语释义图片库/
+
+# 排除 Python 缓存和虚拟环境
+__pycache__/
+*.pyc
+.venv/
+venv/
