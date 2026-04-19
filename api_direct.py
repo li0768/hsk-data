@@ -1,4 +1,3 @@
-
 """
 直接调用修复版predictor的API - OpenRouter版
 支持真实HSK词汇表分析和词汇高亮显示
@@ -18,6 +17,25 @@ import requests
 import glob
 from collections import Counter
 import pickle
+import zipfile
+import shutil
+
+# ========== 配置：请填写您 GitHub Releases 中各个压缩包的下载地址 ==========
+# 格式：'本地目录或关键文件': '下载地址'
+# 程序会检查关键文件是否存在，如果不存在则下载对应的压缩包并解压
+RELEASE_FILES = {
+    # 模型文件（必须）
+    'models/best_optimized_model.pth': 'https://github.com/li0768/hsk-data/releases/download/v1.0/models.zip',
+    # 词汇表数据（必须）
+    'data/词汇.csv': 'https://github.com/li0768/hsk-data/releases/download/v1.0/data.zip',
+    # 搭配词库（可选，但建议）
+    'n/学习.txt': 'https://github.com/li0768/hsk-data/releases/download/v1.0/n.zip',
+    'left/图书馆.txt': 'https://github.com/li0768/hsk-data/releases/download/v1.0/left.zip',
+    'right/图书馆.txt': 'https://github.com/li0768/hsk-data/releases/download/v1.0/right.zip',
+    # 图片库（可选）
+    '常用词语释义图片库/': 'https://github.com/li0768/hsk-data/releases/download/v1.0/images.zip',
+}
+# ====================================================================
 
 # 全局变量
 custom_tokenizer = None
@@ -32,6 +50,71 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 print("🚀 启动HSK文本分析API - OpenRouter增强优化版")
+
+# ========== 新增：从 GitHub Releases 下载所有必要文件 ==========
+
+def download_and_extract(url, target_dir=None, check_file=None):
+    """下载 zip 文件并解压到指定目录"""
+    if target_dir is None:
+        target_dir = current_dir
+    # 如果提供了检查文件且已存在，则跳过
+    if check_file and os.path.exists(check_file):
+        print(f"✅ {check_file} 已存在，跳过下载 {os.path.basename(url)}")
+        return True
+    print(f"📦 开始下载: {url}")
+    zip_path = os.path.join(current_dir, "temp_download.zip")
+    try:
+        response = requests.get(url, stream=True, timeout=300)
+        response.raise_for_status()
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded = 0
+        with open(zip_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+                downloaded += len(chunk)
+                if total_size:
+                    print(f"   下载进度: {downloaded/total_size*100:.1f}%", end='\r')
+        print(f"\n   ✅ 下载完成，正在解压...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(target_dir)
+        print(f"   ✅ 解压完成")
+        os.remove(zip_path)
+        return True
+    except Exception as e:
+        print(f"   ❌ 下载或解压失败: {e}")
+        return False
+
+def download_all_assets():
+    """检查并下载所有缺失的资产文件"""
+    print("\n🔍 检查本地文件完整性...")
+    all_success = True
+    for check_path, url in RELEASE_FILES.items():
+        # 如果 check_path 以 '/' 结尾，表示这是一个目录，检查目录是否存在且非空
+        if check_path.endswith('/'):
+            dir_path = os.path.join(current_dir, check_path)
+            if os.path.isdir(dir_path) and len(os.listdir(dir_path)) > 0:
+                print(f"✅ 目录 {check_path} 已存在且非空，跳过")
+                continue
+            else:
+                print(f"⚠️ 目录 {check_path} 缺失或为空，开始下载...")
+                ok = download_and_extract(url, check_file=dir_path)
+                if not ok:
+                    all_success = False
+        else:
+            file_path = os.path.join(current_dir, check_path)
+            if os.path.exists(file_path):
+                print(f"✅ 文件 {check_path} 已存在，跳过")
+                continue
+            else:
+                print(f"⚠️ 文件 {check_path} 缺失，开始下载...")
+                ok = download_and_extract(url, check_file=file_path)
+                if not ok:
+                    all_success = False
+    if all_success:
+        print("✅ 所有资产文件准备就绪")
+    else:
+        print("⚠️ 部分资产下载失败，但应用可能仍可运行（某些功能可能受限）")
+    return all_success
 
 # ========== 基础函数 ==========
 
@@ -99,28 +182,24 @@ def generate_fallback_enhanced_analysis(text, prediction_result, analysis_featur
 def get_hsk_level_color(level):
     """获取HSK等级对应的颜色"""
     color_map = {
-        "HSK1": "#93c5fd",   # 浅蓝色
-        "HSK2": "#60a5fa",   # 蓝色
-        "HSK3": "#3b82f6",   # 中蓝色
-        "HSK4": "#fbbf24",   # 浅黄色
-        "HSK5": "#f59e0b",   # 黄色
-        "HSK6": "#d97706",   # 橙色
-        "HSK7-9": "#dc2626", # 红色
-        "未知": "#9ca3af"     # 灰色
+        "HSK1": "#93c5fd",
+        "HSK2": "#60a5fa",
+        "HSK3": "#3b82f6",
+        "HSK4": "#fbbf24",
+        "HSK5": "#f59e0b",
+        "HSK6": "#d97706",
+        "HSK7-9": "#dc2626",
+        "未知": "#9ca3af"
     }
     return color_map.get(level, "#9ca3af")
 
 def load_custom_tokenizer():
     """加载自定义分词器"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
     tokenizer_path = os.path.join(current_dir, 'models', 'best_optimized_model_tokenizer.pkl')
     
     if not os.path.exists(tokenizer_path):
         print(f"❌ 分词器文件不存在: {tokenizer_path}")
-        tokenizer_path = os.path.join(current_dir, 'models', 'best_optimized_model_tokenizer.pkl')
-        if not os.path.exists(tokenizer_path):
-            print(f"❌ 分词器文件也不存在: {tokenizer_path}")
-            return None
+        return None
     
     try:
         with open(tokenizer_path, 'rb') as f:
@@ -199,26 +278,17 @@ def map_hsk_level(level_str):
     level_str = str(level_str).strip()
     
     level_mapping = {
-        # 中文级别
         '一级': 'HSK1', '二级': 'HSK2', '三级': 'HSK3', 
         '四级': 'HSK4', '五级': 'HSK5', '六级': 'HSK6',
         '高等': 'HSK7-9', '高级': 'HSK7-9',
-        
-        # 数字级别
         '1级': 'HSK1', '2级': 'HSK2', '3级': 'HSK3',
         '4级': 'HSK4', '5级': 'HSK5', '6级': 'HSK6',
-        
-        # 纯数字
         '1': 'HSK1', '2': 'HSK2', '3': 'HSK3',
         '4': 'HSK4', '5': 'HSK5', '6': 'HSK6',
         '7': 'HSK7-9', '8': 'HSK7-9', '9': 'HSK7-9',
-        
-        # 英文级别
         'hsk1': 'HSK1', 'hsk2': 'HSK2', 'hsk3': 'HSK3',
         'hsk4': 'HSK4', 'hsk5': 'HSK5', 'hsk6': 'HSK6',
         'hsk7': 'HSK7-9', 'hsk8': 'HSK7-9', 'hsk9': 'HSK7-9',
-        
-        # 带HSK前缀
         'HSK1': 'HSK1', 'HSK2': 'HSK2', 'HSK3': 'HSK3',
         'HSK4': 'HSK4', 'HSK5': 'HSK5', 'HSK6': 'HSK6',
         'HSK7': 'HSK7-9', 'HSK8': 'HSK7-9', 'HSK9': 'HSK7-9',
@@ -247,7 +317,7 @@ def load_hsk_vocabulary():
     
     print("📚 开始加载HSK词汇表（含多音字处理）...")
     
-    base_dir = r"C:\\Users\\DF-Lenovo\\Desktop\\hsk_predictor - 1"
+    base_dir = current_dir
     vocab_path = os.path.join(base_dir, 'data', '词汇.csv')
     chars_path = os.path.join(base_dir, 'data', '汉字.csv')
     
@@ -487,15 +557,12 @@ def initialize_enhanced_analyzer():
         return None
     
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = current_dir
         collocation_dir = os.path.join(base_dir, 'n')
         
         if not os.path.exists(collocation_dir):
             print(f"❌ 搭配词库目录不存在: {collocation_dir}")
-            collocation_dir = os.path.join(current_dir, 'n')
-            if not os.path.exists(collocation_dir):
-                print(f"❌ 相对路径也不存在: {collocation_dir}")
-                return None
+            return None
         
         print(f"📂 搭配词库目录: {collocation_dir}")
         
@@ -1392,6 +1459,7 @@ def fallback_predict(text):
         },
         "text": text
     }
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     """完整分析API"""
@@ -1770,7 +1838,7 @@ def get_collocation():
         
         print(f"\n🔍 ======= 开始解析 {word} =======")
         
-        base_dir = r"C:\Users\DF-Lenovo\Desktop\hsk_predictor - 1"
+        base_dir = current_dir
         collocation_dir = os.path.join(base_dir, 'n')
         file_path = os.path.join(collocation_dir, f"{word}.txt")
         
@@ -2085,7 +2153,7 @@ def test_encoding():
         data = request.get_json()
         word = data.get('word', '学习')
         
-        base_dir = r"C:\Users\DF-Lenovo\Desktop\hsk_predictor - 1"
+        base_dir = current_dir
         collocation_dir = os.path.join(base_dir, 'n')
         file_path = os.path.join(collocation_dir, f"{word}.txt")
         
@@ -2534,6 +2602,7 @@ def find_collocation_file():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/word_info', methods=['POST', 'OPTIONS'])
 def word_info():
     """获取词语的详细信息：拼音、词性、英语、例句、图片"""
@@ -2726,11 +2795,12 @@ def word_info():
         return jsonify({'success': False, 'error': str(e)})
 
 # ========== 主程序入口 ==========
-# 注意：这些初始化代码必须在模块导入时就执行，以支持 gunicorn 启动
-
 print("\n" + "=" * 60)
 print("🚀 HSK文本分析API启动 - OpenRouter增强优化版")
 print("=" * 60)
+
+# 下载所有缺失的资产文件
+download_all_assets()
 
 print("📚 预加载HSK词汇表...")
 hsk_vocabulary, hsk_chars = load_hsk_vocabulary()
@@ -2778,7 +2848,6 @@ print("   - 无需本地Ollama服务")
 print("\n💡 按 Ctrl+C 停止")
 print("=" * 60)
 
-# 只有直接运行脚本时才启动内置服务器
 if __name__ == '__main__':
     import os
     port = int(os.environ.get("PORT", 5000))
